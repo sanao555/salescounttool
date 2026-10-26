@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>販売管理アプリ</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, .1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            margin: 8px 0;
+        }
+
+        input {
+            width: 120px;
+            font-size: 24px;
+            padding: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        #settingsPage {
+            display: none;
+        }
+
+        .setting-row {
+            margin-bottom: 20px;
+        }
+
+        .setting-row label {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .setting-row input {
+            width: 100%;
+            max-width: 400px;
+            font-size: 24px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .primary {
+            background: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        .danger {
+            background: #f44336;
+            color: white;
+            border: none;
+        }
+
+        .quick-sync-button {
+            background: #ff9800;
+            color: white;
+        }
+
+        .counter {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .counter button {
+            width: 70px;
+            height: 70px;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .counter span {
+            display: inline-block;
+            width: 80px;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-row button {
+            flex: 1;
+        }
+
+        .top-back {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+        }
+
+        .user-area {
+            margin-bottom: 15px;
+        }
+
+        .user-area input {
+            width: 200px;
+            font-size: 18px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- 販売画面 -->
+    <div id="mainPage">
+
+        <h1>2026大学祭販売管理</h1>
+
+        <div class="user-area">
+
+            <label>ユーザー名</label>
+
+            <input id="mainUserName" type="text" onchange="saveUserName()">
+
+        </div>
+
+        <div class="card">
+
+            <div class="counter">
+
+                <h2 id="product1Label"></h2>
+
+                <button onclick="changeQty('qty1',-1)">－</button>
+
+                <span id="qty1Display">0</span>
+
+                <button onclick="changeQty('qty1',1)">＋</button>
+
+            </div>
+
+            <br>
+
+            <div class="counter">
+
+                <h2 id="product2Label"></h2>
+
+                <button onclick="changeQty('qty2',-1)">－</button>
+
+                <span id="qty2Display">0</span>
+
+                <button onclick="changeQty('qty2',1)">＋</button>
+
+            </div>
+
+            <br>
+
+            <button class="primary" onclick="pay()">
+                決済
+            </button>
+
+            <div class="button-row">
+
+                <button onclick="resetCounter()">
+                    カウンターリセット
+                </button>
+
+                <button onclick="openSettings()">
+                    設定
+                </button>
+
+            </div>
+
+            <div id="quickSyncArea" style="display:none;">
+
+                <p id="quickSyncMessage"></p>
+
+                <button id="quickSyncButton" class="quick-sync-button" onclick="syncToSpreadsheet()">
+
+                    Googleスプレッドシートへ書き込み
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- 設定画面 -->
+    <div id="settingsPage">
+
+        <button onclick="closeSettings()">
+            ← 戻る
+        </button>
+
+        <h1>設定</h1>
+
+        <div class="card">
+
+            <h2>商品設定</h2>
+            <div class="setting-row">
+                <label>商品1名称</label>
+                <input id="p1name">
+            </div>
+
+            <div class="setting-row">
+                <label>商品1価格</label>
+                <input id="p1price" type="number">
+            </div>
+
+            <div class="setting-row">
+                <label>商品2名称</label>
+                <input id="p2name">
+            </div>
+
+            <div class="setting-row">
+                <label>商品2価格</label>
+                <input id="p2price" type="number">
+            </div>
+
+            <br>
+
+            <button onclick="saveSettings()">
+                設定保存
+            </button>
+
+        </div>
+
+        <div class="card">
+
+            <h2>累計情報</h2>
+
+            <p id="total1"></p>
+            <p id="total2"></p>
+            <p id="totalSales"></p>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>売上履歴</h2>
+
+            <button onclick="downloadCSV()">
+                CSVダウンロード
+            </button>
+
+            <button id="syncButton" onclick="syncToSpreadsheet()">
+                Googleスプレッドシートへ書き込み
+            </button>
+
+            <p id="pendingCount">
+                未送信件数：0件
+            </p>
+
+            <br>
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>日時</th>
+                        <th id="historyH1"></th>
+                        <th id="historyH2"></th>
+                        <th>金額</th>
+                    </tr>
+                </thead>
+
+                <tbody id="historyBody">
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <div class="card">
+
+            <button class="danger" onclick="resetAll()">
+                データ消去
+            </button>
+
+        </div>
+
+        <button onclick="closeSettings()">
+            戻る
+        </button>
+
+    </div>
+
+    <!-- モーダル -->
+    <div class="modal" id="paymentModal">
+
+        <div class="modal-content">
+
+            <h2>決済完了しました</h2>
+
+            <h1 id="modalPrice">
+                0円
+            </h1>
+            <p id="syncWarning" style="
+      color:red;
+      font-weight:bold;
+      white-space:pre-line;
+   ">
+            </p>
+
+            <button onclick="closeModal()">
+                確認
+            </button>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const GAS_URL =
+            "https://script.google.com/macros/s/AKfycbx5fP28yCWcF2uUf10pAGXzwU6MYwSdztLtD-D99XM14_MuRhwSDqmzznNayHs8poZ7/exec";
+
+        // --------------------
+        // 初期値
+        // --------------------
+
+        let settings =
+            JSON.parse(localStorage.getItem("settings"))
+            || {
+                userName: "",
+                product1: "フランクフルト",
+                price1: 250,
+                product2: "お茶",
+                price2: 100
+            };
+
+        let totals =
+            JSON.parse(localStorage.getItem("totals"))
+            || {
+                count1: 0,
+                count2: 0,
+                sales: 0
+            };
+
+        let salesHistory =
+            JSON.parse(localStorage.getItem("salesHistory"))
+            || [];
+
+        let pendingSyncHistory =
+            JSON.parse(
+                localStorage.getItem("pendingSyncHistory")
+            ) || [];
+
+        let qty1 = 0;
+        let qty2 = 0;
+
+        function changeQty(target, diff) {
+
+            if (target === "qty1") {
+
+                qty1 += diff;
+
+                document.getElementById(
+                    "qty1Display"
+                ).textContent = qty1;
+
+            }
+
+            if (target === "qty2") {
+
+                qty2 += diff;
+
+                document.getElementById(
+                    "qty2Display"
+                ).textContent = qty2;
+
+            }
+        }
+
+        // --------------------
+
+        function saveData() {
+
+            localStorage.setItem(
+                "settings",
+                JSON.stringify(settings)
+            );
+
+            localStorage.setItem(
+                "totals",
+                JSON.stringify(totals)
+            );
+
+            localStorage.setItem(
+                "salesHistory",
+                JSON.stringify(salesHistory)
+            );
+
+            localStorage.setItem(
+                "pendingSyncHistory",
+                JSON.stringify(pendingSyncHistory)
+            );
+
+        }
+
+        // --------------------
+
+        function refresh() {
+
+
+            product1Label.textContent =
+                `${settings.product1} (${settings.price1}円)`;
+
+            product2Label.textContent =
+                `${settings.product2} (${settings.price2}円)`;
+
+            total1.textContent =
+                `${settings.product1}累計販売数 : ${totals.count1}`;
+
+            total2.textContent =
+                `${settings.product2}累計販売数 : ${totals.count2}`;
+
+            totalSales.textContent =
+                `累計売上 : ${totals.sales}円`;
+
+            historyH1.textContent =
+                settings.product1;
+
+            historyH2.textContent =
+                settings.product2;
+
+            p1name.value =
+                settings.product1;
+
+            p2name.value =
+                settings.product2;
+
+            p1price.value =
+                settings.price1;
+
+            p2price.value =
+                settings.price2;
+
+
+            updateHistory();
+
+            const mainUserName =
+                document.getElementById(
+                    "mainUserName"
+                );
+
+            if (mainUserName) {
+
+                mainUserName.value =
+                    settings.userName || "";
+
+            }
+
+            const pendingElement =
+                document.getElementById("pendingCount");
+
+            if (pendingElement) {
+
+                pendingElement.textContent =
+                    `未送信件数：${pendingSyncHistory.length}件`;
+
+                pendingElement.style.color =
+                    pendingSyncHistory.length > 0
+                        ? "red"
+                        : "black";
+            }
+
+            const quickSyncArea =
+                document.getElementById("quickSyncArea");
+
+            if (quickSyncArea) {
+
+                quickSyncArea.style.display =
+                    pendingSyncHistory.length > 0
+                        ? "block"
+                        : "none";
+            }
+
+            const quickSyncMessage =
+                document.getElementById("quickSyncMessage");
+
+            if (quickSyncMessage) {
+
+                quickSyncMessage.textContent =
+                    `未送信データが ${pendingSyncHistory.length} 件あります`;
+
+            }
+
+        }
+
+        // --------------------
+
+        function resetCounter() {
+
+
+            qty1 = 0;
+            qty2 = 0;
+
+            document.getElementById(
+                "qty1Display"
+            ).textContent = 0;
+
+            document.getElementById(
+                "qty2Display"
+            ).textContent = 0;
+        }
+        // --------------------
+
+        async function sendToSpreadsheet(saleData) {
+
+            try {
+
+                const response = await fetch(
+                    GAS_URL,
+                    {
+                        method: "POST",
+                        body: JSON.stringify(saleData)
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error();
+                }
+
+                saleData.synced = true;
+                salesHistory.forEach(item => {
+
+                    if (item.id === saleData.id) {
+
+                        item.synced = true;
+
+                    }
+
+                });
+                pendingSyncHistory =
+                    pendingSyncHistory.filter(
+                        item => item.id !== saleData.id
+                    );
+
+                saveData();
+                refresh();
+
+            }
+            catch (error) {
+
+                saleData.synced = false;
+
+                if (
+                    !pendingSyncHistory.some(
+                        item => item.id === saleData.id
+                    )
+                ) {
+                    pendingSyncHistory.push(saleData);
+                }
+
+                saveData();
+                refresh();
+
+                alert(
+                    "Googleスプレッドシートへの自動送信に失敗しました。\n\n" +
+                    "ホーム画面の「Googleスプレッドシートへ書き込み」ボタンから再送してください。"
+                );
+
+            }
+
+        }
+
+
+        async function pay() {
+
+            const saleQty1 = qty1;
+            const saleQty2 = qty2;
+
+            if (saleQty1 === 0 && saleQty2 === 0) {
+
+                alert("数量を入力してください");
+                return;
+
+            }
+
+            if (saleQty1 < 0 || saleQty2 < 0) {
+
+                let message =
+                    "負の数量が入力されています。\n\n";
+
+                if (saleQty1 < 0) {
+                    message +=
+                        `${settings.product1}: ${saleQty1}\n`;
+                }
+
+                if (saleQty2 < 0) {
+                    message +=
+                        `${settings.product2}: ${saleQty2}\n`;
+                }
+
+                message +=
+                    "\n返金・訂正処理として登録しますか？";
+
+                if (!confirm(message)) {
+                    return;
+                }
+            }
+
+            const amount =
+                saleQty1 * settings.price1 +
+                saleQty2 * settings.price2;
+
+            totals.count1 += saleQty1;
+            totals.count2 += saleQty2;
+            totals.sales += amount;
+
+            const saleData = {
+
+                id: Date.now().toString() +
+                    Math.random().toString(36).slice(2),
+
+                datetime: new Date().toLocaleString("ja-JP"),
+                userName: settings.userName,
+                product1_name: settings.product1,
+                product1_qty: saleQty1,
+                product2_name: settings.product2,
+                product2_qty: saleQty2,
+                price1: settings.price1,
+                price2: settings.price2,
+                amount: amount,
+                synced: false
+            };
+
+            salesHistory.unshift(saleData);
+            saveData();
+
+            modalPrice.textContent =
+                `${amount}円`;
+
+            let warningText = "";
+
+            if (pendingSyncHistory.length >= 1) {
+
+                warningText =
+                    `未送信データが${pendingSyncHistory.length}件あります。
+                    Googleスプレッドシートへの書き込みを推奨します。`;
+            }
+
+            const syncWarningElement = document.getElementById("syncWarning");
+
+            if (syncWarningElement) {
+                syncWarningElement.textContent = warningText;
+            }
+
+            paymentModal.style.display =
+                "flex";
+
+            refresh();
+            sendToSpreadsheet(saleData);
+
+
+        }
+
+        // --------------------
+
+        function closeModal() {
+
+            paymentModal.style.display =
+                "none";
+
+            qty1 = 0;
+            qty2 = 0;
+
+            document.getElementById(
+                "qty1Display"
+            ).textContent = "0";
+
+            document.getElementById(
+                "qty2Display"
+            ).textContent = "0";
+
+        }
+
+
+        // --------------------
+
+        function updateHistory() {
+
+            historyBody.innerHTML = "";
+
+            salesHistory.forEach(item => {
+
+                const rowColor =
+                    item.synced === false
+                        ? "#fff3cd"
+                        : "white";
+
+                historyBody.innerHTML += `
+        <tr style="background:${rowColor}">
+            <td>${item.datetime}</td>
+            <td>${item.product1_qty}</td>
+            <td>${item.product2_qty}</td>
+            <td>${item.amount}円</td>
+        </tr>
+        `;
+
+            });
+
+        }
+
+        // --------------------
+        function saveUserName() {
+
+            settings.userName =
+                document.getElementById(
+                    "mainUserName"
+                ).value;
+
+            saveData();
+
+        }
+
+
+        function saveSettings() {
+
+            settings.product1 =
+                p1name.value;
+
+            settings.product2 =
+                p2name.value;
+
+            settings.price1 =
+                Number(p1price.value);
+
+            settings.price2 =
+                Number(p2price.value);
+
+            saveData();
+
+            refresh();
+
+            alert("保存しました");
+
+        }
+
+        // --------------------
+
+        function openSettings() {
+
+            mainPage.style.display =
+                "none";
+
+            settingsPage.style.display =
+                "block";
+
+            refresh();
+
+        }
+
+        function closeSettings() {
+
+            settingsPage.style.display =
+                "none";
+
+            mainPage.style.display =
+                "block";
+
+        }
+
+        // --------------------
+
+        function downloadCSV() {
+
+            if (salesHistory.length === 0) {
+
+                alert("履歴がありません");
+                return;
+
+            }
+
+            let csv =
+                `日時,${settings.product1},${settings.product2},金額\n`;
+
+            salesHistory.forEach(item => {
+
+                csv +=
+                    `${item.datetime},${item.product1_qty},${item.product2_qty},${item.amount}\n`;
+
+            });
+
+            csv += "\n";
+
+            csv +=
+                `累計${settings.product1},${totals.count1}\n`;
+
+            csv +=
+                `累計${settings.product2},${totals.count2}\n`;
+
+            csv +=
+                `累計売上,${totals.sales}\n`;
+
+            csv += "\n";
+
+            csv +=
+                `日付,${settings.product1},${settings.product2},売上\n`;
+
+            const summary = {};
+
+            salesHistory.forEach(item => {
+
+                const date =
+                    item.datetime.split(" ")[0];
+
+                if (!summary[date]) {
+
+                    summary[date] = {
+                        saleQty1: 0,
+                        saleQty2: 0,
+                        amount: 0
+                    };
+
+                }
+
+                summary[date].saleQty1 += item.product1_qty;
+                summary[date].saleQty2 += item.product2_qty;
+                summary[date].amount += item.amount;
+
+            });
+
+            Object.entries(summary).forEach(
+                ([date, data]) => {
+
+                    csv +=
+                        `${date},${data.saleQty1},${data.saleQty2},${data.amount}\n`;
+
+                });
+
+            const blob =
+                new Blob(
+                    ["\uFEFF" + csv],
+                    { type: "text/csv;charset=utf-8" }
+                );
+
+            const url =
+                URL.createObjectURL(blob);
+
+
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download = "sales_history.csv";
+            a.click();
+
+            URL.revokeObjectURL(url);
+
+        }
+
+        // --------------------
+
+        function resetAll() {
+            // 1回目の確認
+            if (
+                !confirm(
+                    "この端末に保存してある全データを削除しますか？\n" +
+                    "(スプレッドシートへ記入済のデータは消去されません。)"
+                )
+            ) {
+                return;
+            }
+            // 未送信データがある場合の追加確認
+            if (pendingSyncHistory.length > 0) {
+
+                const result = confirm(
+                    `Googleスプレッドシートへ未送信のデータが ${pendingSyncHistory.length} 件あります。\n\n` +
+                    "削除すると復元できません。\n" +
+                    "本当に全データを削除しますか？"
+                );
+
+                if (!result) {
+                    return;
+                }
+            }
+
+            localStorage.clear();
+
+            settings = {
+                product1: "フランクフルト",
+                price1: 250,
+                product2: "お茶",
+                price2: 100
+            };
+
+            totals = {
+                count1: 0,
+                count2: 0,
+                sales: 0
+            };
+
+            salesHistory = [];
+            pendingSyncHistory = [];
+
+            saveData();
+
+            refresh();
+
+            alert("リセットしました");
+
+        }
+
+        // --------------------
+
+        refresh();
+
+        async function syncToSpreadsheet() {
+
+            if (pendingSyncHistory.length === 0) {
+
+                alert("送信待ちデータはありません");
+                return;
+
+            }
+
+            const syncButton =
+                document.getElementById("syncButton");
+
+            const quickSyncButton =
+                document.getElementById("quickSyncButton");
+
+            try {
+
+                syncButton.disabled = true;
+
+                syncButton.style.background =
+                    "#cccccc";
+
+                syncButton.style.color =
+                    "#666666";
+
+                syncButton.textContent =
+                    "送信中...";
+
+                if (quickSyncButton) {
+
+                    quickSyncButton.disabled = true;
+
+                    quickSyncButton.style.background =
+                        "#cccccc";
+
+                    quickSyncButton.style.color =
+                        "#666666";
+
+                    quickSyncButton.textContent =
+                        "送信中...";
+                }
+
+                for (const sale of pendingSyncHistory) {
+
+                    await fetch(
+                        GAS_URL,
+                        {
+                            method: "POST",
+                            body: JSON.stringify(sale)
+                        }
+                    );
+
+                    sale.synced = true;
+                }
+
+                const sentIds =
+                    pendingSyncHistory.map(
+                        item => item.id
+                    );
+
+                salesHistory.forEach(item => {
+
+                    if (
+                        sentIds.includes(item.id)
+                    ) {
+                        item.synced = true;
+                    }
+
+                });
+
+
+                pendingSyncHistory = [];
+
+                saveData();
+
+                refresh();
+
+                syncButton.disabled = false;
+                syncButton.style.background = "";
+                syncButton.style.color = "";
+
+                syncButton.textContent =
+                    "Googleスプレッドシートへ書き込み";
+
+                if (quickSyncButton) {
+
+                    quickSyncButton.disabled = false;
+
+                    quickSyncButton.style.background = "";
+                    quickSyncButton.style.color = "";
+
+                    quickSyncButton.textContent =
+                        "Googleスプレッドシートへ書き込み";
+                }
+
+                alert(
+                    "Googleスプレッドシートへ送信しました"
+                );
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                alert(
+                    "送信に失敗しました\n\n" +
+                    error.message
+                );
+
+                syncButton.disabled = false;
+                syncButton.style.background = "";
+                syncButton.style.color = "";
+
+                syncButton.textContent =
+                    "Googleスプレッドシートへ書き込み";
+
+                if (quickSyncButton) {
+
+                    quickSyncButton.disabled = false;
+
+                    quickSyncButton.style.background = "";
+                    quickSyncButton.style.color = "";
+
+                    quickSyncButton.textContent =
+                        "Googleスプレッドシートへ書き込み";
+                }
+
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>
